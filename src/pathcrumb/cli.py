@@ -44,8 +44,15 @@ def fix(
 
     roots = paths or [Path.cwd()]
 
-    fix_headers(roots, dry_run)
+    stats = fix_headers(roots, dry_run)
 
+    print()
 
-if __name__ == "__main__":
-    app()
+    print(f"Scanned {stats['scanned']} files")
+
+    if stats["added"] == 0 and stats["updated"] == 0:
+        print("No header changes needed")
+        return
+
+    print(f"Added headers: {stats['added']}")
+    print(f"Updated headers: {stats['updated']}")
