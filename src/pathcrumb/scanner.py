@@ -1,15 +1,29 @@
 # src/pathcrumb/scanner.py
 
 from pathlib import Path
-from .config import IGNORED_FOLDERS
+from .config import IGNORED_DIR_NAMES
 
 
 def should_skip(file_path: Path) -> bool:
-    return any(part in IGNORED_FOLDERS for part in file_path.parts)
+    """
+    Skip files located inside ignored directories.
+    """
+    return any(part in IGNORED_DIR_NAMES for part in file_path.parts)
 
 
-def iter_python_files(root: Path):
-    for py_file in root.rglob("*.py"):
-        if should_skip(py_file):
+def iter_python_files(roots: list[Path]):
+    """
+    Iterate over Python files inside one or more root directories.
+    """
+
+    for root in roots:
+        if root.is_file():
+            if root.suffix == ".py" and not should_skip(root):
+                yield root
             continue
-        yield py_file
+
+        for py_file in root.rglob("*.py"):
+            if should_skip(py_file):
+                continue
+
+            yield py_file

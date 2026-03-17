@@ -1,10 +1,10 @@
 # src/pathcrumb/config.py
 
-IGNORED_FOLDERS = {
+IGNORED_DIR_NAMES = {
     "__pycache__",
+    ".git",
     ".venv",
     "venv",
-    ".git",
     "build",
     "dist",
     "tests",

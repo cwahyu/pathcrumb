@@ -10,11 +10,14 @@ app = typer.Typer(help="Keep Python file headers aligned with file paths")
 
 
 @app.command()
-def check():
-    """Check for missing header paths."""
+def check(paths: list[Path] = typer.Argument(None)):
+    """
+    Check for missing header paths.
+    """
 
-    root = Path.cwd()
-    missing = find_missing_headers(root)
+    roots = paths or [Path.cwd()]
+
+    missing = find_missing_headers(roots)
 
     if not missing:
         print("✔ All Python files contain header paths.")
@@ -31,11 +34,17 @@ def check():
 
 
 @app.command()
-def fix(dry_run: bool = typer.Option(False, "--dry-run", help="Preview changes")):
-    """Fix or add header paths."""
+def fix(
+    paths: list[Path] = typer.Argument(None),
+    dry_run: bool = typer.Option(False, "--dry-run", help="Preview changes"),
+):
+    """
+    Fix or add header paths.
+    """
 
-    root = Path.cwd()
-    fix_headers(root, dry_run)
+    roots = paths or [Path.cwd()]
+
+    fix_headers(roots, dry_run)
 
 
 if __name__ == "__main__":

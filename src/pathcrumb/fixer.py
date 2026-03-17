@@ -16,7 +16,7 @@ def update_header(file_path: Path, root: Path, dry_run: bool):
 
     first_line = lines[0]
 
-    # Case 1: header exists but wrong
+    # header exists but incorrect
     if HEADER_PATTERN.match(first_line):
         if first_line.strip() != new_header:
             print(f"Update: {rel_path}")
@@ -27,7 +27,7 @@ def update_header(file_path: Path, root: Path, dry_run: bool):
 
         return
 
-    # Case 2: header missing
+    # header missing
     print(f"Add: {rel_path}")
 
     if not dry_run:
@@ -35,6 +35,7 @@ def update_header(file_path: Path, root: Path, dry_run: bool):
         file_path.write_text("\n".join(lines) + "\n")
 
 
-def fix_headers(root: Path, dry_run: bool):
-    for py_file in iter_python_files(root):
-        update_header(py_file, root, dry_run)
+def fix_headers(roots: list[Path], dry_run: bool):
+    for root in roots:
+        for py_file in iter_python_files([root]):
+            update_header(py_file, root, dry_run)
