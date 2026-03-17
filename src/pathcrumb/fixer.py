@@ -1,3 +1,5 @@
+# src/pathcrumb/fixer.py
+
 from pathlib import Path
 from .patterns import HEADER_PATTERN
 from .scanner import iter_python_files
@@ -5,6 +7,7 @@ from .scanner import iter_python_files
 
 def update_header(file_path: Path, root: Path, dry_run: bool):
     rel_path = file_path.relative_to(root)
+    new_header = f"# {rel_path}"
 
     lines = file_path.read_text().splitlines()
 
@@ -13,15 +16,23 @@ def update_header(file_path: Path, root: Path, dry_run: bool):
 
     first_line = lines[0]
 
+    # Case 1: header exists but wrong
     if HEADER_PATTERN.match(first_line):
-        new_header = f"# {rel_path}"
-
         if first_line.strip() != new_header:
             print(f"Update: {rel_path}")
 
             if not dry_run:
                 lines[0] = new_header
                 file_path.write_text("\n".join(lines) + "\n")
+
+        return
+
+    # Case 2: header missing
+    print(f"Add: {rel_path}")
+
+    if not dry_run:
+        lines.insert(0, new_header)
+        file_path.write_text("\n".join(lines) + "\n")
 
 
 def fix_headers(root: Path, dry_run: bool):

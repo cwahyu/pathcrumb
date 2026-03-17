@@ -1,3 +1,5 @@
+# src/pathcrumb/scanner.py
+
 from pathlib import Path
 from .config import IGNORED_FOLDERS
 
