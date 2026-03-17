@@ -1,10 +1,13 @@
 # src/pathcrumb/cli.py
 
+import tomllib
+import tomli_w
 import typer
 from pathlib import Path
 
 from .checker import find_missing_headers
 from .fixer import fix_headers
+from .config import load_config
 
 app = typer.Typer(help="Keep Python file headers aligned with file paths")
 
@@ -22,7 +25,14 @@ def check(
     Check for missing header paths.
     """
 
-    roots = paths or [Path.cwd()]
+    config = load_config()
+
+    if paths:
+        roots = paths
+    elif config["target"]:
+        roots = [Path(p) for p in config["target"]]
+    else:
+        roots = [Path.cwd()]
 
     missing = find_missing_headers(roots)
 
@@ -77,3 +87,37 @@ def fix(
 
     if check:
         raise typer.Exit(code=1)
+
+
+@app.command()
+def init():
+    """
+    Initialize pathcrumb configuration in pyproject.toml.
+    """
+
+    pyproject = Path.cwd() / "pyproject.toml"
+
+    if not pyproject.exists():
+        print("pyproject.toml not found.")
+        raise typer.Exit(code=1)
+
+    data = tomllib.loads(pyproject.read_text())
+
+    tool = data.setdefault("tool", {})
+
+    if "pathcrumb" in tool:
+        print("[tool.pathcrumb] already exists in pyproject.toml")
+        raise typer.Exit(code=0)
+
+    tool["pathcrumb"] = {
+        "target": ["src"],
+        "ignore": ["tests"],
+    }
+
+    pyproject.write_text(tomli_w.dumps(data))
+
+    print("Added configuration:")
+    print()
+    print("[tool.pathcrumb]")
+    print('target = ["src"]')
+    print('ignore = ["tests"]')
