@@ -4,3 +4,11 @@ repos:
     hooks:
       - id: ruff
       - id: ruff-format
+
+  - repo: local
+    hooks:
+      - id: pathcrumb
+        name: pathcrumb header check
+        entry: pathcrumb check --fail-on-missing
+        language: system
+        types: [python]
