@@ -10,7 +10,14 @@ app = typer.Typer(help="Keep Python file headers aligned with file paths")
 
 
 @app.command()
-def check(paths: list[Path] = typer.Argument(None)):
+def check(
+    paths: list[Path] = typer.Argument(None),
+    fail_on_missing: bool = typer.Option(
+        False,
+        "--fail-on-missing",
+        help="Exit with code 1 if headers are missing (useful for CI).",
+    ),
+):
     """
     Check for missing header paths.
     """
@@ -30,7 +37,10 @@ def check(paths: list[Path] = typer.Argument(None)):
 
     print(f"\nTotal missing headers: {len(missing)}")
 
-    raise typer.Exit(code=1)
+    if fail_on_missing:
+        raise typer.Exit(code=1)
+
+    raise typer.Exit(code=0)
 
 
 @app.command()
