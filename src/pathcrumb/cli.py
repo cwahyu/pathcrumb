@@ -47,12 +47,20 @@ def check(
 def fix(
     paths: list[Path] = typer.Argument(None),
     dry_run: bool = typer.Option(False, "--dry-run", help="Preview changes"),
+    check: bool = typer.Option(
+        False,
+        "--check",
+        help="Do not modify files, exit with code 1 if changes would occur.",
+    ),
 ):
     """
     Fix or add header paths.
     """
 
     roots = paths or [Path.cwd()]
+
+    if check:
+        dry_run = True
 
     stats = fix_headers(roots, dry_run)
 
@@ -62,7 +70,10 @@ def fix(
 
     if stats["added"] == 0 and stats["updated"] == 0:
         print("No header changes needed")
-        return
+        raise typer.Exit(code=0)
 
     print(f"Added headers: {stats['added']}")
     print(f"Updated headers: {stats['updated']}")
+
+    if check:
+        raise typer.Exit(code=1)

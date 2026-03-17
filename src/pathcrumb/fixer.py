@@ -26,7 +26,7 @@ def update_header(file_path: Path, dry_run: bool):
     if idx < len(lines) and HEADER_PATTERN.match(lines[idx]):
         # header exists but incorrect
         if lines[idx].strip() != header_line:
-            print(f"Update: {rel_path}")
+            print(f"Update: {rel_path}" if not dry_run else f"Would update: {rel_path}")
 
             if not dry_run:
                 lines[idx] = header_line
@@ -46,7 +46,7 @@ def update_header(file_path: Path, dry_run: bool):
         return "ok"
 
     # header missing
-    print(f"Add: {rel_path}")
+    print(f"Add: {rel_path}" if not dry_run else f"Would add: {rel_path}")
 
     if not dry_run:
         new_lines = []
