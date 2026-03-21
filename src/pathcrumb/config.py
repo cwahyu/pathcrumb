@@ -11,7 +11,6 @@ DEFAULT_IGNORE_DIRS = {
     "venv",
     "build",
     "dist",
-    "tests",
 }
 
 
