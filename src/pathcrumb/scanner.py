@@ -1,6 +1,7 @@
 # src/pathcrumb/scanner.py
 
 from pathlib import Path
+
 from .config import load_config
 
 

@@ -1,8 +1,8 @@
 # src/pathcrumb/config.py
 
 from pathlib import Path
-import tomllib
 
+import tomllib
 
 DEFAULT_IGNORE_DIRS = {
     "__pycache__",

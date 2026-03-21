@@ -1,6 +1,7 @@
 # src/pathcrumb/fixer.py
 
 from pathlib import Path
+
 from .patterns import HEADER_PATTERN
 from .scanner import iter_python_files
 

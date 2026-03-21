@@ -1,13 +1,14 @@
 # src/pathcrumb/cli.py
 
-import tomllib
-import tomli_w
-import typer
 from pathlib import Path
 
+import tomli_w
+import tomllib
+import typer
+
 from .checker import find_missing_headers
-from .fixer import fix_headers
 from .config import load_config
+from .fixer import fix_headers
 
 app = typer.Typer(help="Keep Python file headers aligned with file paths")
 

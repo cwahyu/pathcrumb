@@ -1,6 +1,7 @@
 # tests/test_headers.py
 
 from pathlib import Path
+
 from pathcrumb.checker import find_missing_headers
 
 

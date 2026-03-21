@@ -1,4 +1,5 @@
 from typer.testing import CliRunner
+
 from pathcrumb.cli import app
 
 runner = CliRunner()
