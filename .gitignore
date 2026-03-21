@@ -9,6 +9,14 @@ wheels/
 # Virtual environments
 .venv
 
-# Local files
+# Coverage
+.coverage
+.coverage.*
+htmlcov/
+
+# local
 .DS_Store
+.gitlater
+.pre-commit-personal.yaml
 local/
+scripts/

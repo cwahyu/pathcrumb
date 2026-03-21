@@ -17,8 +17,17 @@ repos:
 
   - repo: local
     hooks:
-      - id: pathcrumb
-        name: pathcrumb header check
-        entry: pathcrumb check --fail-on-missing
+      - id: pytest
+        name: Run pytest
+        entry: poetry run pytest
         language: system
-        types: [python]
+        pass_filenames: false
+
+  - repo: local
+    hooks:
+      - id: gitlater
+        name: git later
+        entry: gitlater check
+        language: system
+        stages: [pre-commit]
+        pass_filenames: false
