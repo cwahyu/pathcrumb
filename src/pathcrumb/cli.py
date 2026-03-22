@@ -3,6 +3,7 @@
 import importlib.metadata
 from pathlib import Path
 
+import click
 import tomli_w
 import tomllib
 import typer
@@ -53,6 +54,23 @@ def resolve_roots(paths: list[Path] | None) -> list[Path]:
     return [Path.cwd()]
 
 
+def get_output_flags():
+    ctx = click.get_current_context()
+    obj = ctx.obj or {}
+    return obj.get("verbose", False), obj.get("quiet", False)
+
+
+def echo(msg: str, *, verbose: bool, quiet: bool, always: bool = False):
+    """
+    Centralized output control.
+    """
+    if quiet:
+        return
+
+    if always or verbose:
+        print(msg)
+
+
 # -----------------------------------------------------------------------------
 # App
 # -----------------------------------------------------------------------------
@@ -81,11 +99,24 @@ def main(
         callback=version_callback,
         is_eager=True,
     ),
+    verbose: bool = typer.Option(
+        False,
+        "--verbose",
+        help="Show detailed output.",
+    ),
+    quiet: bool = typer.Option(
+        False,
+        "--quiet",
+        help="Suppress non-essential output.",
+    ),
 ):
     """
     Pathcrumb CLI.
     """
-    pass
+    click.get_current_context().obj = {
+        "verbose": verbose,
+        "quiet": quiet,
+    }
 
 
 # -----------------------------------------------------------------------------
@@ -117,19 +148,31 @@ def check(
       pathcrumb check --fail-on-missing
     """
 
+    verbose, quiet = get_output_flags()
+
     roots = resolve_roots(paths)
     missing = find_missing_headers(roots)
 
     if not missing:
-        print("All Python files contain header paths.")
+        echo(
+            "All Python files contain header paths.",
+            verbose=verbose,
+            quiet=quiet,
+            always=True,
+        )
         raise typer.Exit(code=0)
 
-    print("\nFiles missing header paths:\n")
+    echo("\nFiles missing header paths:\n", verbose=verbose, quiet=quiet, always=True)
 
     for file in missing:
-        print(f"  {file}")
+        echo(f"  {file}", verbose=verbose, quiet=quiet, always=True)
 
-    print(f"\nTotal missing headers: {len(missing)}")
+    echo(
+        f"\nTotal missing headers: {len(missing)}",
+        verbose=verbose,
+        quiet=quiet,
+        always=True,
+    )
 
     if fail_on_missing:
         raise typer.Exit(code=1)
@@ -166,6 +209,8 @@ def fix(
       pathcrumb fix --check
     """
 
+    verbose, quiet = get_output_flags()
+
     roots = resolve_roots(paths)
 
     if check:
@@ -173,15 +218,35 @@ def fix(
 
     stats = fix_headers(roots, dry_run)
 
-    print()
-    print(f"Scanned {stats['scanned']} files")
+    echo("", verbose=verbose, quiet=quiet, always=True)
+    echo(
+        f"Scanned {stats['scanned']} files",
+        verbose=verbose,
+        quiet=quiet,
+        always=True,
+    )
 
     if stats["added"] == 0 and stats["updated"] == 0:
-        print("No header changes needed")
+        echo(
+            "No header changes needed",
+            verbose=verbose,
+            quiet=quiet,
+            always=True,
+        )
         raise typer.Exit(code=0)
 
-    print(f"Added headers: {stats['added']}")
-    print(f"Updated headers: {stats['updated']}")
+    echo(
+        f"Added headers: {stats['added']}",
+        verbose=verbose,
+        quiet=quiet,
+        always=True,
+    )
+    echo(
+        f"Updated headers: {stats['updated']}",
+        verbose=verbose,
+        quiet=quiet,
+        always=True,
+    )
 
     if check:
         raise typer.Exit(code=1)
@@ -198,18 +263,24 @@ def init():
       pathcrumb init
     """
 
+    verbose, quiet = get_output_flags()
+
     pyproject = Path.cwd() / "pyproject.toml"
 
     if not pyproject.exists():
-        print("pyproject.toml not found.")
+        echo("pyproject.toml not found.", verbose=verbose, quiet=quiet, always=True)
         raise typer.Exit(code=1)
 
     data = tomllib.loads(pyproject.read_text())
-
     tool = data.setdefault("tool", {})
 
     if "pathcrumb" in tool:
-        print("[tool.pathcrumb] already exists in pyproject.toml")
+        echo(
+            "[tool.pathcrumb] already exists in pyproject.toml",
+            verbose=verbose,
+            quiet=quiet,
+            always=True,
+        )
         raise typer.Exit(code=0)
 
     tool["pathcrumb"] = {
@@ -219,7 +290,7 @@ def init():
 
     pyproject.write_text(tomli_w.dumps(data))
 
-    print("Added configuration:\n")
-    print("[tool.pathcrumb]")
-    print('target = ["src"]')
-    print('ignore = ["tests"]')
+    echo("Added configuration:\n", verbose=verbose, quiet=quiet, always=True)
+    echo("[tool.pathcrumb]", verbose=verbose, quiet=quiet, always=True)
+    echo('target = ["src"]', verbose=verbose, quiet=quiet, always=True)
+    echo('ignore = ["tests"]', verbose=verbose, quiet=quiet, always=True)
