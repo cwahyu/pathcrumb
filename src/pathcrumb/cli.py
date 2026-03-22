@@ -210,15 +210,30 @@ def fix(
     """
 
     verbose, quiet = get_output_flags()
-
     roots = resolve_roots(paths)
 
     if check:
         dry_run = True
 
-    stats = fix_headers(roots, dry_run)
+    result = fix_headers(roots, dry_run)
+    stats = result["stats"]
+    actions = result["actions"]
 
+    # ---------------------------------------------------------
+    # Verbose output (details FIRST)
+    # ---------------------------------------------------------
+    if verbose:
+        for path in actions["added"]:
+            echo(f"Add: {path}", verbose=verbose, quiet=quiet)
+
+        for path in actions["updated"]:
+            echo(f"Update: {path}", verbose=verbose, quiet=quiet)
+
+    # ---------------------------------------------------------
+    # Summary
+    # ---------------------------------------------------------
     echo("", verbose=verbose, quiet=quiet, always=True)
+
     echo(
         f"Scanned {stats['scanned']} files",
         verbose=verbose,
@@ -248,6 +263,9 @@ def fix(
         always=True,
     )
 
+    # ---------------------------------------------------------
+    # Exit behavior (AFTER output)
+    # ---------------------------------------------------------
     if check:
         raise typer.Exit(code=1)
 

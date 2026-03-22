@@ -15,7 +15,7 @@ def update_header(file_path: Path, dry_run: bool):
     lines = file_path.read_text().splitlines()
 
     if not lines:
-        return "skipped"
+        return "skipped", None
 
     idx = 0
 
@@ -27,14 +27,12 @@ def update_header(file_path: Path, dry_run: bool):
     if idx < len(lines) and HEADER_PATTERN.match(lines[idx]):
         # header exists but incorrect
         if lines[idx].strip() != header_line:
-            print(f"Update: {rel_path}" if not dry_run else f"Would update: {rel_path}")
-
             if not dry_run:
                 lines[idx] = header_line
                 _normalize_spacing(lines)
                 file_path.write_text("\n".join(lines) + "\n")
 
-            return "updated"
+            return "updated", rel_path
 
         # header correct → normalize spacing only
         if not dry_run:
@@ -44,11 +42,9 @@ def update_header(file_path: Path, dry_run: bool):
             if lines != original:
                 file_path.write_text("\n".join(lines) + "\n")
 
-        return "ok"
+        return "ok", None
 
     # header missing
-    print(f"Add: {rel_path}" if not dry_run else f"Would add: {rel_path}")
-
     if not dry_run:
         new_lines = []
 
@@ -81,12 +77,12 @@ def update_header(file_path: Path, dry_run: bool):
 
         file_path.write_text("\n".join(new_lines) + "\n")
 
-    return "added"
+    return "added", rel_path
 
 
 def _normalize_spacing(lines: list[str]) -> None:
     """
-    Ensure exactly one blank line after the header/comment block.
+    Ensure at least one blank line after the header/comment block.
     """
 
     i = 0
@@ -111,15 +107,27 @@ def fix_headers(roots: list[Path], dry_run: bool):
         "updated": 0,
     }
 
+    actions = {
+        "added": [],
+        "updated": [],
+    }
+
     for py_file in iter_python_files(roots):
         stats["scanned"] += 1
 
-        result = update_header(py_file, dry_run)
+        result, rel_path = update_header(py_file, dry_run)
 
         if result == "added":
             stats["added"] += 1
+            if rel_path:
+                actions["added"].append(rel_path)
 
-        if result == "updated":
+        elif result == "updated":
             stats["updated"] += 1
+            if rel_path:
+                actions["updated"].append(rel_path)
 
-    return stats
+    return {
+        "stats": stats,
+        "actions": actions,
+    }
