@@ -1,5 +1,6 @@
 # src/pathcrumb/cli.py
 
+import importlib.metadata
 from pathlib import Path
 
 import tomli_w
@@ -10,7 +11,47 @@ from .checker import find_missing_headers
 from .config import load_config
 from .fixer import fix_headers
 
-app = typer.Typer(help="Keep Python file headers aligned with file paths")
+
+def get_version() -> str:
+    """
+    Get version from installed package metadata,
+    fallback to pyproject.toml for local development.
+    """
+
+    try:
+        return importlib.metadata.version("pathcrumb")
+    except importlib.metadata.PackageNotFoundError:
+        pyproject = Path.cwd() / "pyproject.toml"
+        if pyproject.exists():
+            data = tomllib.loads(pyproject.read_text())
+            return data["project"]["version"]
+
+    return "0.0.0"
+
+
+def version_callback(value: bool):
+    if value:
+        print(f"pathcrumb {get_version()}")
+        raise typer.Exit()
+
+
+app = typer.Typer(
+    help="Keep Python file headers aligned with file paths",
+    add_completion=False,
+)
+
+
+@app.callback()
+def main(
+    version: bool = typer.Option(
+        False,
+        "--version",
+        help="Show version and exit",
+        callback=version_callback,
+        is_eager=True,
+    ),
+):
+    pass
 
 
 @app.command()
