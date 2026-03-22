@@ -99,12 +99,9 @@ def _normalize_spacing(lines: list[str]) -> None:
     while i < len(lines) and lines[i].startswith("#"):
         i += 1
 
-    # remove extra blank lines
-    while i < len(lines) and lines[i] == "":
-        lines.pop(i)
-
-    # insert exactly one blank line
-    lines.insert(i, "")
+    # ensure at least one blank line
+    if i >= len(lines) or lines[i] != "":
+        lines.insert(i, "")
 
 
 def fix_headers(roots: list[Path], dry_run: bool):
