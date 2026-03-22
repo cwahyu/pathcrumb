@@ -11,13 +11,16 @@ from .checker import find_missing_headers
 from .config import load_config
 from .fixer import fix_headers
 
+# -----------------------------------------------------------------------------
+# Helpers
+# -----------------------------------------------------------------------------
+
 
 def get_version() -> str:
     """
     Get version from installed package metadata,
     fallback to pyproject.toml for local development.
     """
-
     try:
         return importlib.metadata.version("pathcrumb")
     except importlib.metadata.PackageNotFoundError:
@@ -35,9 +38,37 @@ def version_callback(value: bool):
         raise typer.Exit()
 
 
+def resolve_roots(paths: list[Path] | None) -> list[Path]:
+    """
+    Resolve scan roots from CLI arguments or configuration.
+    """
+    config = load_config()
+
+    if paths:
+        return paths
+
+    if config["target"]:
+        return [Path(p) for p in config["target"]]
+
+    return [Path.cwd()]
+
+
+# -----------------------------------------------------------------------------
+# App
+# -----------------------------------------------------------------------------
+
+
 app = typer.Typer(
-    help="Keep Python file headers aligned with file paths",
+    help=(
+        "Keep Python file headers aligned with their relative file paths.\n\n"
+        "Examples:\n"
+        "  pathcrumb init\n"
+        "  pathcrumb fix\n"
+        "  pathcrumb fix src --dry-run\n"
+        "  pathcrumb check --fail-on-missing\n"
+    ),
     add_completion=False,
+    no_args_is_help=True,
 )
 
 
@@ -46,43 +77,54 @@ def main(
     version: bool = typer.Option(
         False,
         "--version",
-        help="Show version and exit",
+        help="Show version and exit.",
         callback=version_callback,
         is_eager=True,
     ),
 ):
+    """
+    Pathcrumb CLI.
+    """
     pass
+
+
+# -----------------------------------------------------------------------------
+# Commands
+# -----------------------------------------------------------------------------
 
 
 @app.command()
 def check(
-    paths: list[Path] = typer.Argument(None),
+    paths: list[Path] = typer.Argument(
+        None,
+        help=(
+            "Files or directories to scan (default: configured target or project root)."
+        ),
+    ),
     fail_on_missing: bool = typer.Option(
         False,
         "--fail-on-missing",
-        help="Exit with code 1 if headers are missing (useful for CI).",
+        help="Exit with code 1 if missing headers are found (CI-friendly).",
     ),
 ):
     """
-    Check for missing header paths.
+    Check Python files for missing header paths.
+
+    Examples:
+      pathcrumb check
+      pathcrumb check src
+      pathcrumb check src tests
+      pathcrumb check --fail-on-missing
     """
 
-    config = load_config()
-
-    if paths:
-        roots = paths
-    elif config["target"]:
-        roots = [Path(p) for p in config["target"]]
-    else:
-        roots = [Path.cwd()]
-
+    roots = resolve_roots(paths)
     missing = find_missing_headers(roots)
 
     if not missing:
-        print("✔ All Python files contain header paths.")
+        print("All Python files contain header paths.")
         raise typer.Exit(code=0)
 
-    print("\n⚠ Files missing header paths:\n")
+    print("\nFiles missing header paths:\n")
 
     for file in missing:
         print(f"  {file}")
@@ -97,19 +139,34 @@ def check(
 
 @app.command()
 def fix(
-    paths: list[Path] = typer.Argument(None),
-    dry_run: bool = typer.Option(False, "--dry-run", help="Preview changes"),
+    paths: list[Path] = typer.Argument(
+        None,
+        help=(
+            "Files or directories to scan (default: configured target or project root)."
+        ),
+    ),
+    dry_run: bool = typer.Option(
+        False,
+        "--dry-run",
+        help="Preview changes without modifying files.",
+    ),
     check: bool = typer.Option(
         False,
         "--check",
-        help="Do not modify files, exit with code 1 if changes would occur.",
+        help="Exit with code 1 if changes would be made.",
     ),
 ):
     """
-    Fix or add header paths.
+    Add or update header paths in Python files.
+
+    Examples:
+      pathcrumb fix
+      pathcrumb fix src
+      pathcrumb fix src --dry-run
+      pathcrumb fix --check
     """
 
-    roots = paths or [Path.cwd()]
+    roots = resolve_roots(paths)
 
     if check:
         dry_run = True
@@ -117,7 +174,6 @@ def fix(
     stats = fix_headers(roots, dry_run)
 
     print()
-
     print(f"Scanned {stats['scanned']} files")
 
     if stats["added"] == 0 and stats["updated"] == 0:
@@ -135,6 +191,11 @@ def fix(
 def init():
     """
     Initialize pathcrumb configuration in pyproject.toml.
+
+    This adds a [tool.pathcrumb] section with default settings.
+
+    Example:
+      pathcrumb init
     """
 
     pyproject = Path.cwd() / "pyproject.toml"
@@ -158,8 +219,7 @@ def init():
 
     pyproject.write_text(tomli_w.dumps(data))
 
-    print("Added configuration:")
-    print()
+    print("Added configuration:\n")
     print("[tool.pathcrumb]")
     print('target = ["src"]')
     print('ignore = ["tests"]')
