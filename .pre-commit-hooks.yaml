@@ -1,0 +1,13 @@
+- id: pathcrumb-fix
+  name: pathcrumb (fix headers)
+  description: Add or update Python file path headers
+  entry: pathcrumb fix
+  language: python
+  types: [python]
+
+- id: pathcrumb-check
+  name: pathcrumb (check headers)
+  description: Check Python file path headers (no changes)
+  entry: pathcrumb check --fail-on-missing
+  language: python
+  types: [python]
