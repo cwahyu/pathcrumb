@@ -13,6 +13,8 @@ def find_missing_headers(roots: list[Path]) -> list[Path]:
 
     missing: list[Path] = []
 
+    project_root = Path.cwd().resolve()
+
     for py_file in iter_python_files(roots):
         lines = py_file.read_text().splitlines()
 
@@ -26,15 +28,21 @@ def find_missing_headers(roots: list[Path]) -> list[Path]:
             idx = 1
 
         if idx >= len(lines) or not HEADER_PATTERN.match(lines[idx]):
-            # compute path relative to the closest root
-            for root in roots:
-                try:
-                    rel = py_file.resolve().relative_to(root.resolve())
-                    break
-                except ValueError:
-                    continue
-            else:
-                rel = py_file
+            file_resolved = py_file.resolve()
+
+            try:
+                # preferred: relative to project root
+                rel = file_resolved.relative_to(project_root)
+            except ValueError:
+                # fallback: relative to scan roots
+                for root in roots:
+                    try:
+                        rel = file_resolved.relative_to(root.resolve())
+                        break
+                    except ValueError:
+                        continue
+                else:
+                    rel = Path(py_file.name)
 
             missing.append(rel)
 
