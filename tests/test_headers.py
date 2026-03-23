@@ -25,3 +25,12 @@ def test_shebang_header(tmp_path):
     missing = find_missing_headers([tmp_path])
 
     assert missing == []
+
+
+def test_empty_file_ignored(tmp_path):
+    file = tmp_path / "empty.py"
+    file.write_text("")
+
+    missing = find_missing_headers([tmp_path])
+
+    assert missing == []
