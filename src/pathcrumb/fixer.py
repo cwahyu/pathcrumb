@@ -6,9 +6,22 @@ from .patterns import HEADER_PATTERN
 from .scanner import iter_python_files
 
 
-def update_header(file_path: Path, dry_run: bool):
+def update_header(file_path: Path, roots: list[Path], dry_run: bool):
+
     project_root = Path.cwd().resolve()
-    rel_path = file_path.resolve().relative_to(project_root)
+    file_resolved = file_path.resolve()
+
+    try:
+        rel_path = file_resolved.relative_to(project_root)
+    except ValueError:
+        for root in roots:
+            try:
+                rel_path = file_resolved.relative_to(root.resolve())
+                break
+            except ValueError:
+                continue
+        else:
+            rel_path = Path(file_path.name)
 
     header_line = f"# {rel_path}"
 
@@ -115,7 +128,7 @@ def fix_headers(roots: list[Path], dry_run: bool):
     for py_file in iter_python_files(roots):
         stats["scanned"] += 1
 
-        result, rel_path = update_header(py_file, dry_run)
+        result, rel_path = update_header(py_file, roots, dry_run)
 
         if result == "added":
             stats["added"] += 1
